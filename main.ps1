@@ -16,7 +16,7 @@ foreach($user in $users){
         $Password = "Welcome1"
         $Username = $firstname[0] + $lastname
         $Email = $user.Email
-        $OU = "OU=ExternalTempUsers,OU=DOI Users,DC=DOI,DC=NYCNET"
+        $OU = "OU=ExternalTempUsers,OU=DOI Users,DC=DistinguishedName"
         $AccountEnabled = $true
 
         $SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
