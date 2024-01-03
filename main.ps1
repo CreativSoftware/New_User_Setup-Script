@@ -65,7 +65,7 @@ foreach($user in $users){
             else {$OU = "OU=TestUsers,OU=DOI Users,DC=DOI,DC=NYCNET"}
     
         #Enables Remote Mailbox on Account.
-        Invoke-Command -ComputerName "exch-hybrid01" -Credential $credentials -ScriptBlock {
+        Invoke-Command -ComputerName "servername" -Credential $credentials -ScriptBlock {
             $aduser = Get-Aduser -Identity $using:Username -Properties *
             Enable-RemoteMailbox -Identity $aduser.DisplayName -RemoteRoutingAddress $using:Username@nycdoi365.mail.onmicrosoft.com -Credential $credientials
         }
