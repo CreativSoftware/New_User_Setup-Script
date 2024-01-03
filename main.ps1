@@ -6,7 +6,7 @@ while ($authenticate) {
     $domain_username = Read-Host -Prompt "Enter YOUR ADMIN domain\username"
     $credientials = Get-Credential -UserName $domain_username -Message 'Enter Admin Password'
     try {
-        $session = New-PSSession -ComputerName 'doidc02' -Credential $credientials -ErrorAction Stop
+        $session = New-PSSession -ComputerName 'servername' -Credential $credientials -ErrorAction Stop
         Remove-PSSession $session
         Write-Host "Authentication successful" -ForegroundColor Green
         $authenticate = $false
@@ -96,7 +96,7 @@ foreach($user in $users){
             else {$OU = "OU=TestUsers,OU=DOI Users,DC=DOI,DC=NYCNET"}
 
         #Enables Remote Mailbox on Account.
-        Invoke-Command -ComputerName "exch-hybrid01" -Credential $credentials -ScriptBlock {
+        Invoke-Command -ComputerName "servername" -Credential $credentials -ScriptBlock {
             $aduser = Get-Aduser -Identity $using:Username -Properties *
             Enable-RemoteMailbox -Identity $aduser.DisplayName -RemoteRoutingAddress $using:Username@nycdoi365.mail.onmicrosoft.com -Credential $credientials
         } 
