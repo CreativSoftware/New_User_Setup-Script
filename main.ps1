@@ -55,7 +55,7 @@ foreach($user in $users){
             -Credential $credentials `
             -ErrorAction Stop
 
-            #Adds the user to the Main group
+            #Adds the user to their Main group
             if ($OU -eq "OU=Squad1,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad1 -Members $Username -Credential $credientials}
             elseif ($OU -eq "OU=Squad2,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad2 -Members $Username -Credential $credientials}
             elseif ($OU -eq "OU=Squad3,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad3 -Members $Username -Credential $credientials}
@@ -86,7 +86,7 @@ foreach($user in $users){
             -DisplayName $Name `
             -Credential $credentials
 
-            #Adds the user to the Main group
+            #Adds the user to their Main group
             if ($OU -eq "OU=Squad1,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad1 -Members $Username -Credential $credientials}
             elseif ($OU -eq "OU=Squad2,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad2 -Members $Username -Credential $credientials}
             elseif ($OU -eq "OU=Squad3,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad3 -Members $Username -Credential $credientials}
