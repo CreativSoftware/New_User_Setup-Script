@@ -8,7 +8,7 @@ while ($authenticate) {
     $domain_username = Read-Host -Prompt "Enter YOUR ADMIN domain\username"
     $credentials = Get-Credential -UserName $domain_username -Message 'Enter Admin Password'
     try {
-        $session = New-PSSession -ComputerName 'doidc02' -Credential $credentials -ErrorAction Stop
+        $session = New-PSSession -ComputerName '' -Credential $credentials -ErrorAction Stop
         Remove-PSSession $session
         Write-Host "Authentication successful" -ForegroundColor Green
         $authenticate = $false
