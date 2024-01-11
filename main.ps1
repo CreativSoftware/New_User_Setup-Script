@@ -1,12 +1,14 @@
+#Pulls information from Excel spreadsheet
 $users = Import-Excel -Path .\new_users.xlsx
 
+#Verifies Authentication
 $authenticate = $true
 $attempts = 3
 while ($authenticate) {
     $domain_username = Read-Host -Prompt "Enter YOUR ADMIN domain\username"
-    $credientials = Get-Credential -UserName $domain_username -Message 'Enter Admin Password'
+    $credentials = Get-Credential -UserName $domain_username -Message 'Enter Admin Password'
     try {
-        $session = New-PSSession -ComputerName 'servername' -Credential $credientials -ErrorAction Stop
+        $session = New-PSSession -ComputerName 'doidc02' -Credential $credentials -ErrorAction Stop
         Remove-PSSession $session
         Write-Host "Authentication successful" -ForegroundColor Green
         $authenticate = $false
@@ -20,88 +22,123 @@ while ($authenticate) {
     }
 }
 
+#Global Varibles
+$Password = ""
+$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+$AccountEnabled = $true
+$Street = ''
+$City = ''
+$Zip = ''
+$Country = ""
+$State = ''
+$Company = ''
+
+#Reads each Row in Spreadsheet and creates the account
 foreach($user in $users){
-    try {
-        $name = $user.Name.split(" ")
-        $FirstName = $name[0]
-        $LastName  = $name[1]
-        $Name = $user.Name
-        $Password = "Welcome1"
-        $SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-        $Username = $Firstname[0].tostring() + $LastName
-        $Email = $user.Email
-        $AccountEnabled = $true
+    $Name = $user.Name
+    $Email = $user.Email
+    $JobTitle = $user.Title
+    $Department = $user.Squad
 
-        if ($users.Squad -eq "squad1"){$OU = "OU=Squad1,OU=DOI Users,DC=DOI,DC=NYCNET"}
-        elseif ($users.Squad -eq "squad2"){$OU = "OU=Squad2,OU=DOI Users,DC=DOI,DC=NYCNET"}
-        elseif ($users.Squad -eq "squad3"){$OU = "OU=Squad3,OU=DOI Users,DC=DOI,DC=NYCNET"}
-        elseif ($users.Squad -eq "squad4"){$OU = "OU=Squad4,OU=DOI Users,DC=DOI,DC=NYCNET"}
-        elseif ($users.Squad -eq "squad5"){$OU = "OU=Squad5,OU=DOI Users,DC=DOI,DC=NYCNET"} 
-        elseif ($users.Squad -eq "squad6"){$OU = "OU=Squad6,OU=DOI Users,DC=DOI,DC=NYCNET"}
-        else {$OU = "OU=TestUsers,OU=DOI Users,DC=DOI,DC=NYCNET"}
-
-        #Sets up New User.
-        New-ADUser `
-            -Name $Name `
-            -UserPrincipalName "$Username@doi.nyc.gov" `
-            -SamAccountName $Username `
-            -EmailAddress $Email `
-            -AccountPassword $SecurePassword `
-            -Enabled $AccountEnabled `
-            -Path $OU `
-            -GivenName $FirstName `
-            -Surname $LastName `
-            -DisplayName $Name `
-            -Credential $credentials `
-            -ErrorAction Stop
-
-            #Adds the user to their Main group
-            if ($OU -eq "OU=Squad1,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad1 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad2,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad2 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad3,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad3 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad4,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad4 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad5,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad5 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad6,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad6 -Members $Username -Credential $credientials}
-            else {$OU = "OU=TestUsers,OU=DOI Users,DC=DOI,DC=NYCNET"}
+    $fullname = $user.Name.split(" ")
+    $FirstName = $fullname[0]
+    $LastName  = $fullname[1]
+    $Username = $FirstName[0].tostring() + $LastName
     
-        #Enables Remote Mailbox on Account.
-        Invoke-Command -ComputerName "servername" -Credential $credentials -ScriptBlock {
-            $aduser = Get-Aduser -Identity $using:Username -Properties *
-            Enable-RemoteMailbox -Identity $aduser.DisplayName -RemoteRoutingAddress $using:Username@nycdoi365.mail.onmicrosoft.com -Credential $credientials
+    $Mname = $user.Manager.split(" ")
+    $Mfirst = $Mname[0]
+    $Mlast = $Mname[1]
+    $Manager = Get-ADUser -Filter {GivenName -eq $Mfirst -and Surname -eq $Mlast} | Select-Object -First 1 |Select-Object -ExpandProperty SamAccountName
+
+    if ($Department -eq "squad1"){$OU = ""}
+    elseif ($Department -eq "squad2"){$OU = ""}
+    elseif ($Department -eq "squad3"){$OU = ""}
+    elseif ($Department -eq "squad4"){$OU = ""}
+    elseif ($Department -eq "squad5"){$OU = ""} 
+    elseif ($Department -eq "squad6"){$OU = ""}
+    elseif ($Department -eq "execunit"){$OU = ""}
+    else {$OU = ""}
+
+    #Creates New ADUser Account
+    New-ADUser `
+        -Name $Name `
+        -UserPrincipalName "$Username@doi.nyc.gov" `
+        -SamAccountName $Username `
+        -EmailAddress $Email `
+        -AccountPassword $SecurePassword `
+        -Enabled $AccountEnabled `
+        -Path $OU `
+        -GivenName $FirstName `
+        -Surname $LastName `
+        -DisplayName $Name `
+        -StreetAddress $Street `
+        -City $City `
+        -PostalCode $Zip `
+        -Country $Country `
+        -State $State `
+        -Title $JobTitle `
+        -Department $Department `
+        -Manager $Manager `
+        -Company $Company `
+        -HomeDirectory "\\home_folder\$Username" `
+        -HomeDrive 'I:' `
+        -Credential $credentials
+        
+        #Adds Specific Membership Groups
+        if ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }    
         }
-    }
-    catch {
-        #If the username already exist then this block is ran.
-        $Username = $Firstname[0][1].tostring() + $LastName
-        New-ADUser `
-            -Name $Name `
-            -UserPrincipalName "$Username@doi.nyc.gov" `
-            -SamAccountName $Username `
-            -EmailAddress $Email `
-            -AccountPassword $SecurePassword `
-            -Enabled $AccountEnabled `
-            -Path $OU `
-            -GivenName $FirstName `
-            -Surname $LastName `
-            -DisplayName $Name `
+        elseif ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }  
+        }
+        elseif ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }
+        }
+        elseif ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }
+        }
+        elseif ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }
+        }
+        elseif ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }
+        }
+        elseif ($OU -eq ""){
+            $groups = @('')
+            foreach($group in $groups){
+                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+            }
+        }
+        else {$OU = ""}
+    
+    #Adds General Membership Groups
+    $groups = @('')
+    foreach($group in $groups){
+        Add-ADGroupMember `
+            -Identity $group `
+            -Members @($Username) `
             -Credential $credentials
-
-            #Adds the user to their Main group
-            if ($OU -eq "OU=Squad1,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad1 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad2,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad2 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad3,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad3 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad4,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad4 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad5,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad5 -Members $Username -Credential $credientials}
-            elseif ($OU -eq "OU=Squad6,OU=DOI Users,DC=DOI,DC=NYCNET"){Add-ADGroupMember -Identity Squad6 -Members $Username -Credential $credientials}
-            else {$OU = "OU=TestUsers,OU=DOI Users,DC=DOI,DC=NYCNET"}
-
-        #Enables Remote Mailbox on Account.
-        Invoke-Command -ComputerName "servername" -Credential $credentials -ScriptBlock {
-            $aduser = Get-Aduser -Identity $using:Username -Properties *
-            Enable-RemoteMailbox -Identity $aduser.DisplayName -RemoteRoutingAddress $using:Username@nycdoi365.mail.onmicrosoft.com -Credential $credientials
-        } 
     }
-}
+  }
 
 
-
+  
+  
