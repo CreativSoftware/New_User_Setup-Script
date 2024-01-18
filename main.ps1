@@ -33,7 +33,7 @@ $Country = ""
 $State = ''
 $Company = ''
 
-#Reads each Row in Spreadsheet and creates the account
+#Reads each Row in Spreadsheet and creates the variables for the account creation
 foreach($user in $users){
     $Name = $user.Name
     $Email = $user.Email
@@ -50,13 +50,17 @@ foreach($user in $users){
     $Mlast = $Mname[1]
     $Manager = Get-ADUser -Filter {GivenName -eq $Mfirst -and Surname -eq $Mlast} | Select-Object -First 1 |Select-Object -ExpandProperty SamAccountName
 
-    if ($Department -eq "squad1"){$OU = ""}
-    elseif ($Department -eq "squad2"){$OU = ""}
-    elseif ($Department -eq "squad3"){$OU = ""}
-    elseif ($Department -eq "squad4"){$OU = ""}
-    elseif ($Department -eq "squad5"){$OU = ""} 
-    elseif ($Department -eq "squad6"){$OU = ""}
-    elseif ($Department -eq "execunit"){$OU = ""}
+    if ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""} 
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
+    elseif ($Department -eq ""){$OU = ""}
     else {$OU = ""}
 
     #Creates New ADUser Account
@@ -84,60 +88,101 @@ foreach($user in $users){
         -HomeDrive 'I:' `
         -Credential $credentials
         
-        #Adds Specific Membership Groups
-        if ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }    
+    #Adds Specific Membership Groups
+    if ($OU -eq ""){
+        $groups = @('', '', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+        }    
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+        }  
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        elseif ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }  
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        elseif ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        elseif ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        elseif ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }
+    }
+    elseif ($OU -eq ""){
+        $groups = @('','', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        elseif ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        elseif ($OU -eq ""){
-            $groups = @('')
-            foreach($group in $groups){
-                Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
-            }
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
         }
-        else {$OU = ""}
+    }
+    elseif ($OU -eq ""){
+        $groups = @('', '', '', '')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+        }
+    }
+    elseif ($OU -eq ""){
+        $groups = @('')
+        foreach($group in $groups){
+            Add-ADGroupMember -Identity $group -Members @($Username) -Credential $credentials
+        }
+    }
     
     #Adds General Membership Groups
-    $groups = @('')
+    $groups = @('', '', '', '', '', '')
     foreach($group in $groups){
         Add-ADGroupMember `
             -Identity $group `
             -Members @($Username) `
             -Credential $credentials
     }
+
+    #Connects to Azure and performs an ADsync
+    Invoke-Command -ComputerName server -Credential $credentials -ScriptBlock {
+        Start-ADSyncSyncCycle -PolicyType Delta
+    }
+    
+    #Pauses script for 30 seconds
+    Start-Sleep -Seconds 30
+
+    #Connects to the Exchange Server and Enables Remote mailbox 
+    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://server/PowerShell/ -Authentication Kerberos -Credential $credentials
+    Import-PSSession $Session -DisableNameChecking
+
+    Enable-RemoteMailbox -Identity $Name -RemoteRoutingAddress $Username@domain.mail.onmicrosoft.com
   }
+
+#Removes Connection to Exchange Server
+Remove-PSSession $Session
+
 
 
   
